@@ -38,6 +38,9 @@ import org.janelia.alignment.RenderParameters;
 import org.janelia.alignment.json.JsonUtils;
 import org.janelia.alignment.spec.stack.MipmapPathBuilder;
 
+import org.janelia.alignment.filter.InputFilter;
+import org.janelia.alignment.filter.InputFilterList;
+
 /**
  * Specifies a set of mipmap level images and masks along with
  * a list of transformations to perform against them.
@@ -61,11 +64,13 @@ public class TileSpec implements Serializable {
     private final TreeMap<Integer, ImageAndMask> mipmapLevels;
     private MipmapPathBuilder mipmapPathBuilder;
     private ListTransformSpec transforms;
+    private ListFilterSpec inputfilters;
     private double meshCellSize = RenderParameters.DEFAULT_MESH_CELL_SIZE;
 
     public TileSpec() {
         this.mipmapLevels = new TreeMap<>();
         this.transforms = new ListTransformSpec();
+        this.inputfilters = new ListFilterSpec();
     }
 
     public String getTileId() {
@@ -440,6 +445,41 @@ public class TileSpec implements Serializable {
         transforms = flattenedList;
     }
 
+    /* Copy of Transform functions to support a filter list. */
+    public boolean hasInputFilters() {
+        return ((inputfilters != null) && (inputfilters.size() > 0));
+    }
+
+    public ListFilterSpec getInputFilters() {
+        return inputfilters;
+    }
+
+    public FilterSpec getLastInputFilter() {
+        FilterSpec lastFilter = null;
+        if (hasInputFilters()) {
+            lastFilter = inputfilters.getLastSpec();
+        }
+        return lastFilter;
+    }
+
+    public void setInputFilters(final ListFilterSpec inputfilters) {
+        this.inputfilters = inputfilters;
+    }
+
+    public void addInputFilters(final List<FilterSpec> filterSpecs) {
+        inputfilters.addAllSpecs(filterSpecs);
+    }
+
+    public void removeLastInputFilterSpec() {
+        inputfilters.removeLastSpec();
+    }
+
+    public void flattenInputfilters() {
+        final ListFilterSpec flattenedList = new ListFilterSpec();
+        inputfilters.flatten(flattenedList);
+        inputfilters = flattenedList;
+    }
+
     /**
      * @throws IllegalArgumentException
      *   if this spec's mipmaps are invalid.
@@ -462,6 +502,7 @@ public class TileSpec implements Serializable {
     public void validate() throws IllegalArgumentException {
         validateMipmaps();
         transforms.validate();
+        inputfilters.validate();
     }
 
     /**
@@ -487,6 +528,31 @@ public class TileSpec implements Serializable {
 
         return ctl;
     }
+
+    /**
+     * Get a copy of this {@link TileSpec}'s filters as a {@link CoordinateTransformList}.
+     * If this {@link TileSpec} does not have any filters, an empty list is returned.
+     *
+     * The returned list is no longer cached, so it can be used/changed safely without affecting this {@link TileSpec}.
+     *
+     * @return transform list copy for this tile spec.
+     *
+     * @throws IllegalArgumentException
+     *   if the list cannot be generated.
+     */
+    public InputFilterList<InputFilter> getInputFilterList()
+            throws IllegalArgumentException {
+
+        final InputFilterList<InputFilter> ctl;
+        if (inputfilters == null) {
+            ctl = new InputFilterList<>();
+        } else {
+            ctl = inputfilters.getNewInstanceAsList();
+        }
+
+        return ctl;
+    }
+
 
     public String toLayoutFileFormat() {
 

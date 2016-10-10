@@ -7,7 +7,7 @@ import java.util.Map;
 
 import mpicbg.ij.clahe.Flat;
 
-public class CLAHE implements Filter {
+public class CLAHE implements Filter, InputFilter {
     protected int blockRadius = 500, bins = 256;
 
     protected float slope = 2.5f;
@@ -61,4 +61,8 @@ public class CLAHE implements Filter {
         }
         return false;
     }
+
+    /* Implement temporary InputFilter interface (without changing any of the parameters) */
+    public void init(String string) { return; }
+    public String toDataString() { return null; }
 }

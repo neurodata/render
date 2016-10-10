@@ -127,7 +127,7 @@ public class TemTileSpecValidator implements TileSpecValidator {
             throw new IllegalArgumentException(
                     errorMessage + " derived for tileId '" + tileSpec.getTileId() +
                     "', bounds are [" + tileSpec.getMinX() + ", " + tileSpec.getMinY() + ", " + tileSpec.getMaxX() +
-                    ", " + tileSpec.getMaxY() + "] with transforms " +
+                    ", " + tileSpec.getMaxY() + "] with filters " +
                     tileSpec.getTransforms().toJson().replace('\n', ' '));
         }
 

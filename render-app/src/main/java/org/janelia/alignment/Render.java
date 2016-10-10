@@ -39,6 +39,8 @@ import org.janelia.alignment.util.ImageProcessorCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.janelia.alignment.filter.InputFilter;
+
 /**
  * Render a set of image tile as an ARGB image.
  * <p/>
@@ -356,6 +358,15 @@ public class Render {
             if (ipMipmap.getWidth() == 0 || ipMipmap.getHeight() == 0) {
                 LOG.debug("Skipping zero pixel size mipmap {}", imageAndMask.getImageUrl());
                 continue;
+            }
+
+            // Apply input image filters here.  Probably not the right place ot do it.
+            if (ts.hasInputFilters()) {
+                final double mipmapScale = 1.0 / (1 << mipmapLevel);
+                for (final InputFilter t : ts.getInputFilterList().getList(null)) {
+                    t.process(ipMipmap, mipmapScale);
+                }
+
             }
 
             // filter
