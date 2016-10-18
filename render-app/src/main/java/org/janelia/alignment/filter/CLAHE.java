@@ -63,6 +63,7 @@ public class CLAHE implements Filter, InputFilter {
         return false;
     }
 
+    @Override
     public void init(Map<String, String> params) {
         if (params.containsKey("fast"))
             this.fast = Boolean.parseBoolean(params.get("fast"));
@@ -74,10 +75,9 @@ public class CLAHE implements Filter, InputFilter {
             this.slope = Float.parseFloat(params.get("slope"));
     }
 
-    ;
-
+    @Override
     public Map<String, String> getParams() {
-        Map<String, String> params = new LinkedHashMap<String, String>();
+        Map<String, String> params = new LinkedHashMap<>();
         params.put("fast", Boolean.toString(this.fast));
         params.put("blockradius", Integer.toString(this.blockRadius));
         params.put("bins", Integer.toString(this.bins));
