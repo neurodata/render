@@ -3,7 +3,9 @@ package org.janelia.alignment.filter;
 import ij.process.ImageProcessor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Based on {@link mpicbg.models.CoordinateTransformList}.
@@ -33,8 +35,12 @@ public class InputFilterList< E extends InputFilter > implements InputFilter {
         return ip;
     }
 
-    public void init(String string) { }
-    public String toDataString() { return null; }
+    @Override
+    public void init(Map<String, String> params) {
+    }
 
-
+    @Override
+    public Map<String, String> getParams() {
+        return Collections.emptyMap();
+    }
 }
