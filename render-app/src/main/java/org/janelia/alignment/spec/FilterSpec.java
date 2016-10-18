@@ -173,7 +173,7 @@ public abstract class FilterSpec implements Serializable {
             return listSpec;
         } else if (InputFilter.class.isInstance(filter)) {
             final InputFilter f = (InputFilter)filter;
-            return new LeafFilterSpec(UUID.randomUUID().toString(), null, f.getClass().getCanonicalName(), f.toDataString());
+            return new LeafFilterSpec(UUID.randomUUID().toString(), null, f.getClass().getCanonicalName(), f.getParams());
         } else return null;
 
     }

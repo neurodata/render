@@ -32,7 +32,7 @@ public class LeafFilterSpec extends FilterSpec {
     public static final String TYPE = "leaf";
 
     private final String className;
-    private final String dataString;
+    private final Map<String, String> params;
 
     private transient Class clazz;
 
@@ -41,20 +41,20 @@ public class LeafFilterSpec extends FilterSpec {
     private LeafFilterSpec() {
         super(null, null);
         this.className = null;
-        this.dataString = null;
+        this.params = null;
     }
 
     /**
      * "Legacy" constructor that supports simple specs without ids or metadata.
      *
      * @param  className   name of filter implementation (java) class.
-     * @param  dataString  data with which filter implementation should be initialized.
+     * @param  params      parameters with which filter implementation should be initialized.
      */
     public LeafFilterSpec(final String className,
-                          final String dataString) {
+                          final Map<String, String> params) {
         super(null, null);
         this.className = className;
-        this.dataString = dataString;
+        this.params = params;
     }
 
     /**
@@ -63,23 +63,23 @@ public class LeafFilterSpec extends FilterSpec {
      * @param  id          identifier for this specification.
      * @param  metaData    meta data about the specification.
      * @param  className   name of filter implementation (java) class.
-     * @param  dataString  data with which filter implementation should be initialized.
+     * @param  params      parameters with which filter implementation should be initialized.
      */
     public LeafFilterSpec(final String id,
                           final FilterSpecMetaData metaData,
                           final String className,
-                          final String dataString) {
+                          final Map<String, String> params) {
         super(id, metaData);
         this.className = className;
-        this.dataString = dataString;
+        this.params = params;
     }
 
     public String getClassName() {
         return className;
     }
 
-    public String getDataString() {
-        return dataString;
+    public Map<String, String> getParams() {
+        return params;
     }
 
     @Override
@@ -106,11 +106,11 @@ public class LeafFilterSpec extends FilterSpec {
             throws IllegalArgumentException {
 
         final InputFilter ct = newInstance();
-        if (dataString == null) {
-            throw new IllegalArgumentException("no dataString defined for leaf filter spec with id '" +
+        if (params == null) {
+            throw new IllegalArgumentException("no params defined for leaf filter spec with id '" +
                                                getId() + "'");
         }
-        ct.init(dataString);
+        ct.init(params);
         return ct;
     }
 

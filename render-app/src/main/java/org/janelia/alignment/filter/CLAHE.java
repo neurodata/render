@@ -3,6 +3,7 @@ package org.janelia.alignment.filter;
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import mpicbg.ij.clahe.Flat;
@@ -62,7 +63,26 @@ public class CLAHE implements Filter, InputFilter {
         return false;
     }
 
-    /* Implement temporary InputFilter interface (without changing any of the parameters) */
-    public void init(String string) { return; }
-    public String toDataString() { return null; }
+    public void init(Map<String, String> params) {
+        if (params.containsKey("fast"))
+            this.fast = Boolean.parseBoolean(params.get("fast"));
+        if (params.containsKey("blockradius"))
+            this.blockRadius = Integer.parseInt(params.get("blockradius"));
+        if (params.containsKey("bins"))
+            this.bins = Integer.parseInt(params.get("bins"));
+        if (params.containsKey("slope"))
+            this.slope = Float.parseFloat(params.get("slope"));
+    }
+
+    ;
+
+    public Map<String, String> getParams() {
+        Map<String, String> params = new LinkedHashMap<String, String>();
+        params.put("fast", Boolean.toString(this.fast));
+        params.put("blockradius", Integer.toString(this.blockRadius));
+        params.put("bins", Integer.toString(this.bins));
+        params.put("slop", Float.toString(this.slope));
+
+        return params;
+    }
 }

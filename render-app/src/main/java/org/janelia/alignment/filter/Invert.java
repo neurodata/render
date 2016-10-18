@@ -2,6 +2,9 @@ package org.janelia.alignment.filter;
 
 import ij.process.ImageProcessor;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
  * A very simple filter class to invert the contents of an image.
  *
@@ -14,9 +17,11 @@ public class Invert implements Filter, InputFilter {
         return ip;
     }
 
-    public void init(String string) { };
-    public String toDataString() {
-        return "";
+    /* Invert does not take or return any parameters */
+    public void init(Map<String, String> params) {
     }
 
+    public Map<String, String> getParams() {
+        return Collections.emptyMap();
+    }
 }

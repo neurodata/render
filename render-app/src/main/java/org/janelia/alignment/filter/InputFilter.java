@@ -3,6 +3,7 @@ package org.janelia.alignment.filter;
 import ij.process.ImageProcessor;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Interface for filters intended to be used on input data, before any transformations are applied.
@@ -16,6 +17,7 @@ import java.io.Serializable;
 public interface InputFilter extends Serializable {
     public ImageProcessor process(ImageProcessor ip, final double scale);
 
-    public void init(String string);
-    public String toDataString();
+    public void init(Map<String, String> params);
+
+    public Map<String, String> getParams();
 }
