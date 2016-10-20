@@ -236,6 +236,9 @@ public class ImageProcessorCache {
 
             imageProcessor = imagePlus.getProcessor();
 
+            // Force images to 16-bit, to allow for testing of mixed 8-bit and 16-bit mipmap levels.
+            imageProcessor = imageProcessor.convertToShort(true);
+
             // if we're going to down sample and we're supposed to cache originals, do so here
             if (cacheOriginalsForDownSampledImages && (downSampleLevels > 0)) {
 
