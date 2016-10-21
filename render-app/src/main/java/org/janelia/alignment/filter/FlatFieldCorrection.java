@@ -19,6 +19,9 @@ public class FlatFieldCorrection implements InputFilter {
     @Override
     public ImageProcessor process(ImageProcessor ip, final double scale) {
         ImageProcessor ff = IJ.openImage(flatFieldImagePath).getProcessor();
+        if (scale > 0) {
+            ff = ff.resize(ff.getWidth() / (1 << (int)scale));
+        }
 
         if (ip.getHeight() != ff.getHeight() || ip.getWidth() != ff.getWidth()) {
             throw new IllegalArgumentException("Image sizes differ between original image and flat field correction.\n");
