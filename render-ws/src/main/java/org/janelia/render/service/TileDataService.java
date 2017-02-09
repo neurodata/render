@@ -189,13 +189,13 @@ public class TileDataService {
                     tileRenderHeight = (int) (tileSpec.getHeight() * normalizationFactor);
                 }
 
-                tileSpec.removeLastTransformSpec();
+                //tileSpec.removeLastTransformSpec();
 
                 // If the tile still has more than 3 transforms, remove all but the last 3.
                 // This assumes that the last 3 transforms are for lens correction.
                 // Hopefully at some point we'll label transforms so that it is possible to
                 // explicitly include only lens correction transforms.
-                while (tileSpec.getTransforms().size() > 3) {
+                while (tileSpec.getTransforms().size() > 0) {
                     tileSpec.removeLastTransformSpec();
                 }
 
