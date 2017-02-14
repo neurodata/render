@@ -41,10 +41,12 @@
             <param-name>allowedOrigins</param-name>
             <param-value>*</param-value>
         </init-param>
+        -->
         <init-param>
             <param-name>allowedMethods</param-name>
-            <param-value>GET,POST,HEAD</param-value>
+            <param-value>GET,POST,PUT,HEAD</param-value>
         </init-param>
+        <!--
         <init-param>
             <param-name>allowedHeaders</param-name>
             <param-value>X-Requested-With,Content-Type,Accept,Origin</param-value>
