@@ -12,10 +12,11 @@ RUN apt-get install -y git \
 # see https://github.com/saalfeldlab/render/blob/master/docs/src/site/markdown/render-ws.md
 
 # clone render repo 
-WORKDIR /var/www/render/
-COPY . /var/www/render/
+WORKDIR /var/www/
 
-#RUN git clone https://github.com/saalfeldlab/render.git
+RUN git clone https://github.com/saalfeldlab/render.git
+
+WORKDIR /var/www/render/
 
 # install JDK and Jetty
 RUN ./render-ws/src/main/scripts/install.sh
@@ -23,9 +24,15 @@ RUN ./render-ws/src/main/scripts/install.sh
 # set java home 
 RUN { echo 'JAVA_HOME="$(readlink -m ./deploy/jdk*)"'; } >> ~/.mavenrc 
 
+RUN mvn -Dproject.build.sourceEncoding=UTF-8 package -DskipTests
+COPY . /var/www/render/
+
+# set java home 
+RUN { echo 'JAVA_HOME="$(readlink -m ./deploy/jdk*)"'; } >> ~/.mavenrc 
+
 # build render modules 
 #RUN mvn package
-RUN mvn -Dproject.build.sourceEncoding=UTF-8 package
+RUN mvn -Dproject.build.sourceEncoding=UTF-8 package -DskipTests
 
 # deploy the web service 
 RUN cp render-ws/target/render-ws-*.war deploy/jetty_base/webapps/render-ws.war
@@ -54,8 +61,9 @@ ENV JAVA_OPTIONS="-Xms15g -Xmx15g -server -Djava.awt.headless=true"
 #ENV JAVA_OPTIONS="-Xms400g -Xmx400g -server -Djava.awt.headless=true"
 
 # setup supervisor 
-RUN mkdir -p /var/log/supervisor 
+#RUN mkdir -p /var/log/supervisor 
 
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf 
-CMD ["/usr/bin/supervisord"]
+#COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf 
+#CMD ["/usr/bin/supervisord"]
 
+CMD ["/var/www/render/deploy/jetty-distribution-9.3.7.v20160115/bin/jetty.sh","run"]
