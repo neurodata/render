@@ -181,7 +181,7 @@ public class Converter {
                     json.append(",\n");
                 }
 
-                final TileSpec tileSpec = patch.getTileSpec(projectPath, baseMaskPath, layer.z);
+                final TileSpec tileSpec = patch.getTileSpec(projectPath, baseMaskPath, layer.z,useTitleForTileId);
                 if (validateConvertedTileSpecs) {
                     tileSpec.validate();
                 }
