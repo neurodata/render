@@ -309,9 +309,7 @@ public class TileDataService {
 
         double tileRenderX = tileSpec.getMinX();
         double tileRenderY = tileSpec.getMinY();
-        if (removeAllOption == null){
-          removeAllOption = false;
-        }
+
         int tileRenderWidth;
         if (width == null) {
             tileRenderWidth = (int) (tileSpec.getMaxX() - tileSpec.getMinX() + 1);
@@ -349,7 +347,8 @@ public class TileDataService {
             if (height == null) {
                 tileRenderHeight = (int) (tileSpec.getHeight() * normalizationFactor);
             }
-            if (removeAllOption){
+
+            if ((removeAllOption != null) && removeAllOption){
               while (tileSpec.getTransforms().size() > 0) {
                   tileSpec.removeLastTransformSpec();
               }
