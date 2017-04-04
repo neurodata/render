@@ -1,5 +1,5 @@
-deploy
-htmlcov
-test-reports
+*/deploy
+*/htmlcov
+*/test-reports
 Dockerfile
-examples
+*/examples
