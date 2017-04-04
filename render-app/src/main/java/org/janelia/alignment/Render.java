@@ -32,7 +32,10 @@ import mpicbg.models.CoordinateTransform;
 import mpicbg.models.CoordinateTransformList;
 import mpicbg.trakem2.transform.TransformMeshMappingWithMasks.ImageProcessorWithMasks;
 
+import org.janelia.alignment.filter.CLAHE;
+import org.janelia.alignment.filter.EqualizeHistogram;
 import org.janelia.alignment.filter.NormalizeLocalContrast;
+import org.janelia.alignment.filter.RollingBallSubtraction;
 import org.janelia.alignment.filter.ValueToNoise;
 import org.janelia.alignment.spec.TileSpec;
 import org.janelia.alignment.util.ImageProcessorCache;
@@ -86,11 +89,12 @@ public class Render {
     private static final Logger LOG = LoggerFactory.getLogger(Render.class);
 
     /* TODO this is an adhoc filter bank for temporary use in alignment */
-    final static private NormalizeLocalContrast nlcf = new NormalizeLocalContrast(500, 500, 3, true, true);
+    final static private NormalizeLocalContrast nlcf = new NormalizeLocalContrast(200, 200, 4, true, true);
     final static private ValueToNoise vtnf1 = new ValueToNoise(0, 64, 191);
     final static private ValueToNoise vtnf2 = new ValueToNoise(255, 64, 191);
-//    final static private CLAHE clahe = new CLAHE(true, 250, 256, 2);
-
+    final static private CLAHE clahe = new CLAHE(true, 250, 256, 4);
+    final static private RollingBallSubtraction bgsub = new RollingBallSubtraction(300);
+    final static private EqualizeHistogram eqhist = new EqualizeHistogram(0.0);
     private Render() {
     }
 
@@ -351,9 +355,12 @@ public class Render {
             // filter
             if (doFilter) {
                 final double mipmapScale = 1.0 / (1 << mipmapLevel);
-                vtnf1.process(ipMipmap, mipmapScale);
-                vtnf2.process(ipMipmap, mipmapScale);
-                nlcf.process(ipMipmap, mipmapScale);
+                //vtnf1.process(ipMipmap, mipmapScale);
+                //vtnf2.process(ipMipmap, mipmapScale);
+                //nlcf.process(ipMipmap, mipmapScale);
+                //clahe.process(ipMipmap, mipmapScale);
+                bgsub.process(ipMipmap, mipmapScale);
+                eqhist.process(ipMipmap, mipmapScale);
             }
 
             filterStop = System.currentTimeMillis();

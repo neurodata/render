@@ -41,6 +41,7 @@ RUN cp render-ws/target/render-ws-*.war deploy/jetty_base/webapps/render-ws.war
 EXPOSE 8080
 
 # setup jetty (copy of render/deploy/jetty_base/jetty_wrapper.sh)
+
 ENV JETTY_HOME /var/www/render/deploy/jetty-distribution-9.3.7.v20160115
 ENV JETTY_BASE /var/www/render/deploy/jetty_base
 ENV JETTY_RUN $JETTY_BASE/logs
@@ -52,6 +53,7 @@ ENV PATH $JAVA_HOME/bin:$PATH
 ENV JAVA $JAVA_HOME/bin/java
 
 # small 4GB server:
+
 #ENV JAVA_OPTIONS="-Xms3g -Xmx3g -server -Djava.awt.headless=true"
 
 # larger 16GB server
