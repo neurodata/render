@@ -108,12 +108,15 @@ public class RenderDao {
      * @return a render parameters object for all tiles that match the specified criteria.
      *
      * @throws IllegalArgumentException
-     *   if any required parameters are missing or the stack cannot be found.
+     *   if any required parameters are missing.
+     *
+     * @throws ObjectNotFoundException
+     *    if the stack cannot be found.
      */
     public RenderParameters getParameters(final StackId stackId,
                                           final Double z,
                                           final Double scale)
-            throws IllegalArgumentException {
+            throws IllegalArgumentException, ObjectNotFoundException {
 
         MongoUtil.validateRequiredParameter("stackId", stackId);
         MongoUtil.validateRequiredParameter("z", z);
@@ -138,6 +141,9 @@ public class RenderDao {
      *
      * @throws IllegalArgumentException
      *   if any required parameters are missing or the stack cannot be found.
+     *
+     * @throws ObjectNotFoundException
+     *    if the stack cannot be found.
      */
     public long getTileCount(final StackId stackId,
                              final Double x,
@@ -145,7 +151,7 @@ public class RenderDao {
                              final Double z,
                              final Integer width,
                              final Integer height)
-            throws IllegalArgumentException {
+            throws IllegalArgumentException, ObjectNotFoundException {
 
         MongoUtil.validateRequiredParameter("stackId", stackId);
         MongoUtil.validateRequiredParameter("x", x);
@@ -161,6 +167,10 @@ public class RenderDao {
         final Document tileQuery = getIntersectsBoxQuery(z, x, y, lowerRightX, lowerRightY);
 
         final long count = tileCollection.count(tileQuery);
+
+        if (count == 0) {
+            throwExceptionIfStackIsMissing(stackId);
+        }
 
         LOG.debug("getTileCount: found {} tile spec(s) for {}.find({})",
                   count, MongoUtil.fullName(tileCollection), tileQuery.toJson());
@@ -254,7 +264,6 @@ public class RenderDao {
         return resolvedIdToSpecMap;
     }
 
-
     /**
      * @return a list of resolved tile specifications for all tiles that encompass the specified coordinates.
      *
@@ -285,6 +294,34 @@ public class RenderDao {
         return renderParameters.getTileSpecs();
     }
 
+    /**
+     * @return a list of resolved tile specifications for the specified tileIds.
+     *
+     * @throws IllegalArgumentException
+     *   if any required parameters are missing or if the stack cannot be found.
+     */
+    public List<TileSpec> getTileSpecs(final StackId stackId,
+                                       final List<String> tileIds)
+            throws IllegalArgumentException {
+
+        MongoUtil.validateRequiredParameter("stackId", stackId);
+
+        final Document tileQuery = new Document("tileId", new Document("$in", tileIds));
+
+        final RenderParameters renderParameters = new RenderParameters();
+        addResolvedTileSpecs(stackId, tileQuery, renderParameters);
+
+        final List<TileSpec> tileSpecs;
+        if (renderParameters.hasTileSpecs()) {
+            tileSpecs = renderParameters.getTileSpecs();
+        } else {
+            tileSpecs = new ArrayList<>();
+            LOG.info("no tile specs with requested ids found in stack " + stackId);
+        }
+
+        return tileSpecs;
+    }
+
     public void writeCoordinatesWithTileIds(final StackId stackId,
                                             final Double z,
                                             final List<TileCoordinates> worldCoordinatesList,
@@ -295,7 +332,6 @@ public class RenderDao {
                   stackId, z, worldCoordinatesList.size());
 
         MongoUtil.validateRequiredParameter("stackId", stackId);
-        MongoUtil.validateRequiredParameter("z", z);
 
         final MongoCollection<Document> tileCollection = getTileCollection(stackId);
         final Document tileKeys = new Document("tileId", 1).append("_id", 0);
@@ -311,6 +347,7 @@ public class RenderDao {
         int coordinateCount = 0;
 
         double[] world;
+        double coordinateZ = z == null ? -1 : z;
         Document tileQuery = new Document();
         MongoCursor<Document> cursor = null;
         Document document;
@@ -328,11 +365,18 @@ public class RenderDao {
 
                 if (world == null) {
                     throw new IllegalArgumentException("world values are missing for element " + i);
-                } else if (world.length < 2) {
-                    throw new IllegalArgumentException("world values must include both x and y for element " + i);
+                } else if (z == null) {
+                    if (world.length < 3) {
+                        throw new IllegalArgumentException("world values must include x, y, and z for element " + i);
+                    }
+                    coordinateZ = world[2];
+                } else {
+                    if (world.length < 2) {
+                        throw new IllegalArgumentException("world values must include both x and y for element " + i);
+                    }
                 }
 
-                tileQuery = getIntersectsBoxQuery(z, world[0], world[1], world[0], world[1]);
+                tileQuery = getIntersectsBoxQuery(coordinateZ, world[0], world[1], world[0], world[1]);
 
                 // EXAMPLE:   find({"z": 3299.0 , "minX": {"$lte": 95000.0}, "minY": {"$lte": 200000.0}, "maxX": {"$gte": 95000.0}, "maxY": {"$gte": 200000.0}}, {"tileId":1, "_id": 0}).sort({"tileId" : 1})
                 // INDEXES:   z_1_minY_1_minX_1_maxY_1_maxX_1_tileId_1 (z1_minX_1, z1_maxX_1, ... used for edge cases)
@@ -444,6 +488,7 @@ public class RenderDao {
                                                                                     renderParameters);
 
         if (! renderParameters.hasTileSpecs()) {
+            throwExceptionIfStackIsMissing(stackId);
             throw new ObjectNotFoundException("no tile specifications found in " + stackId +" for z=" + z);
         }
 
@@ -620,8 +665,9 @@ public class RenderDao {
         final Document document = transformCollection.find(query).first();
 
         if (document == null) {
+            throwExceptionIfStackIsMissing(stackId);
             throw new ObjectNotFoundException("transform spec with id '" + transformId + "' does not exist in the " +
-                                              MongoUtil.fullName(transformCollection) + " collection");
+                                              stackId);
         }
 
         return TransformSpec.fromJson(document.toJson());
@@ -724,7 +770,7 @@ public class RenderDao {
 
     public Double getZForSection(final StackId stackId,
                                  final String sectionId)
-            throws IllegalArgumentException, IllegalStateException {
+            throws IllegalArgumentException, ObjectNotFoundException {
 
         MongoUtil.validateRequiredParameter("stackId", stackId);
         MongoUtil.validateRequiredParameter("sectionId", sectionId);
@@ -735,8 +781,8 @@ public class RenderDao {
         final Document document = tileCollection.find(query).first();
 
         if (document == null) {
-            throw new ObjectNotFoundException("sectionId '" + sectionId + "' does not exist in the " +
-                                              MongoUtil.fullName(tileCollection) + " collection");
+            throwExceptionIfStackIsMissing(stackId);
+            throw new ObjectNotFoundException("sectionId '" + sectionId + "' does not exist in the " + stackId);
         }
 
         final TileSpec tileSpec = TileSpec.fromJson(document.toJson());
@@ -787,18 +833,22 @@ public class RenderDao {
      * @return list of section data objects for the specified stackId.
      *
      * @throws IllegalArgumentException
-     *   if any required parameters are missing or the stack cannot be found.
+     *   if any required parameters are missing or the stack section data has not been built.
+     *
+     * @throws ObjectNotFoundException
+     *   if the stack cannot be found.
      */
     public List<SectionData> getSectionData(final StackId stackId,
                                             final Double minZ,
                                             final Double maxZ)
-            throws IllegalArgumentException {
+            throws IllegalArgumentException, ObjectNotFoundException {
 
         MongoUtil.validateRequiredParameter("stackId", stackId);
 
         final List<SectionData> list = new ArrayList<>();
 
         if (! MongoUtil.exists(renderDatabase, stackId.getSectionCollectionName())) {
+            throwExceptionIfStackIsMissing(stackId);
             throw new IllegalArgumentException("section data not aggregated for " + stackId +
                                                ", set stack state to COMPLETE to generate the aggregate collection");
         }
@@ -1308,6 +1358,7 @@ public class RenderDao {
         final Double minX = getBound(tileCollection, tileQuery, "minX", true);
 
         if (minX == null) {
+            throwExceptionIfStackIsMissing(stackId);
             throw new IllegalArgumentException("stack " + stackId.getStack() +
                                                " does not contain any tiles with a z value of " + z);
         }
@@ -1323,11 +1374,14 @@ public class RenderDao {
      * @return spatial data for all tiles with the specified z.
      *
      * @throws IllegalArgumentException
-     *   if any required parameters are missing or the stack cannot be found.
+     *   if any required parameters are missing.
+     *
+     * @throws ObjectNotFoundException
+     *    if the stack cannot be found.
      */
     public List<TileBounds> getTileBoundsForZ(final StackId stackId,
                                               final Double z)
-            throws IllegalArgumentException {
+            throws IllegalArgumentException, ObjectNotFoundException {
 
         MongoUtil.validateRequiredParameter("stackId", stackId);
         MongoUtil.validateRequiredParameter("z", z);
@@ -1340,11 +1394,14 @@ public class RenderDao {
      * @return spatial data for all tiles with the specified z.
      *
      * @throws IllegalArgumentException
-     *   if any required parameters are missing or the stack cannot be found.
+     *   if any required parameters are missing.
+     *
+     * @throws ObjectNotFoundException
+     *    if the stack cannot be found.
      */
     public List<TileBounds> getTileBoundsForSection(final StackId stackId,
                                                     final String sectionId)
-            throws IllegalArgumentException {
+            throws IllegalArgumentException, ObjectNotFoundException {
 
         MongoUtil.validateRequiredParameter("stackId", stackId);
         MongoUtil.validateRequiredParameter("sectionId", sectionId);
@@ -1542,11 +1599,14 @@ public class RenderDao {
      * @return spatial data for all tiles in the specified stack layer.
      *
      * @throws IllegalArgumentException
-     *   if any required parameters are missing or the stack cannot be found.
+     *   if any required parameters are missing.
+     *
+     * @throws ObjectNotFoundException
+     *    if the stack cannot be found
      */
     private List<TileBounds> getTileBounds(final StackId stackId,
                                            final Document tileQuery)
-            throws IllegalArgumentException {
+            throws IllegalArgumentException, ObjectNotFoundException {
 
         final MongoCollection<Document> tileCollection = getTileCollection(stackId);
 
@@ -1581,6 +1641,10 @@ public class RenderDao {
                                         document.getDouble("maxX"),
                                         document.getDouble("maxY")));
             }
+        }
+
+        if (list.size() == 0) {
+            throwExceptionIfStackIsMissing(stackId);
         }
 
         LOG.debug("getTileBounds: found {} tile spec(s) for {}.find({},{})",
@@ -1682,9 +1746,15 @@ public class RenderDao {
             }
         }
 
-        LOG.debug("addResolvedTileSpecs: found {} tile spec(s) for {}.find({}).sort({})",
-                  renderParameters.numberOfTileSpecs(), MongoUtil.fullName(tileCollection),
-                  tileQuery.toJson(), orderBy.toJson());
+        if (LOG.isDebugEnabled()) {
+            String queryJson = tileQuery.toJson();
+            if (queryJson.length() > 100) {
+                queryJson = queryJson.substring(0, 95) + " ...}";
+            }
+            LOG.debug("addResolvedTileSpecs: found {} tile spec(s) for {}.find({}).sort({})",
+                      renderParameters.numberOfTileSpecs(), MongoUtil.fullName(tileCollection),
+                      queryJson, orderBy.toJson());
+        }
 
         return resolveTransformReferencesForTiles(stackId, renderParameters.getTileSpecs());
     }
@@ -1964,6 +2034,15 @@ public class RenderDao {
                               TILE_J_OPTIONS);
 
         LOG.debug("ensureSupplementaryTileIndexes: exit");
+    }
+
+    private void throwExceptionIfStackIsMissing(final StackId stackId)
+            throws ObjectNotFoundException {
+
+        if (! MongoUtil.exists(renderDatabase, stackId.getTileCollectionName())) {
+            throw new ObjectNotFoundException(stackId + " does not exist");
+        }
+
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(RenderDao.class);
