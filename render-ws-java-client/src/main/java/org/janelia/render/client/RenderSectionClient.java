@@ -51,6 +51,8 @@ public class RenderSectionClient {
 
         @Parameter(description = "Z values for sections to render", required = true)
         private List<Double> zValues;
+        @Parameter(names = "--bounds", description = "Bounds used for all layers: xmin, xmax, ymin,ymax", required = false)
+        private List<Integer> bounds;
     }
 
     /**
@@ -113,7 +115,25 @@ public class RenderSectionClient {
                  z, sectionDirectory, renderDataClient);
 
         final Bounds layerBounds = renderDataClient.getLayerBounds(clientParameters.stack, z);
-        final String parametersUrl =
+
+        String parametersUrl; 
+        if(clientParameters.bounds != null && clientParameters.bounds.size() == 4) //Read bounds from supplied parameters
+        {
+            LOG.debug("Using user bounds");
+            parametersUrl = 
+                renderDataClient.getRenderParametersUrlString(clientParameters.stack,
+                                                              clientParameters.bounds.get(0), //Min X 
+                                                              clientParameters.bounds.get(2), //Min Y
+                                                              z,
+                                                              clientParameters.bounds.get(1) - clientParameters.bounds.get(0), //Width
+                                                              clientParameters.bounds.get(3) - clientParameters.bounds.get(2), //Height
+                                                              clientParameters.scale);
+
+        }
+        else //Get bounds from render
+        {
+            LOG.debug("Using render bounds");
+            parametersUrl =
                 renderDataClient.getRenderParametersUrlString(clientParameters.stack,
                                                               layerBounds.getMinX(),
                                                               layerBounds.getMinY(),
@@ -121,7 +141,8 @@ public class RenderSectionClient {
                                                               (int) (layerBounds.getDeltaX() + 0.5),
                                                               (int) (layerBounds.getDeltaY() + 0.5),
                                                               clientParameters.scale);
-
+        }
+        
         LOG.debug("generateImageForZ: {}, loading {}", z, parametersUrl);
 
         final RenderParameters renderParameters = RenderParameters.loadFromUrl(parametersUrl);
