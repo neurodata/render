@@ -133,7 +133,7 @@ public class Utils {
     public static void writeTiffImage(final BufferedImage bufferedImage,
                                       final OutputStream outputStream)
             throws IOException {
-                return writeTiffImage(bufferedImage, outputStream, false);
+                writeTiffImage(bufferedImage, outputStream, false);
             }
     /**
      * Writes a {@link BufferedImage} to the specified {@link OutputStream} using ImageJ's {@link TiffEncoder}.
