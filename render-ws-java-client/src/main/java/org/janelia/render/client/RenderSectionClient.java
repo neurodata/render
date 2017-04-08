@@ -51,6 +51,18 @@ public class RenderSectionClient {
 
         @Parameter(description = "Z values for sections to render", required = true)
         private List<Double> zValues;
+		
+        @Parameter(names = "--bounds", description = "Bounds used for all layers: xmin, xmax, ymin,ymax", required = false)
+        private List<Integer> bounds;
+
+        @Parameter(names = "--customOutputFolder", description = "Custom named folder for output. Overrides the default format 'sections_at_#' folder", required = false)
+        private String customOutPutFolder="";
+
+        @Parameter(names = "--customSubFolder", description = "Name for subfolder to customOutputFolder, if used", required = false)
+        private String customSubFolder;
+
+        @Parameter(names = "--padFileNamesWithZeros", description = "Pad outputfilenames with leading zeroes, i.e. 12.tiff -> 00012.tiff", required = false)
+        private boolean padFileNameWithZeroes;
     }
 
     /**
@@ -86,15 +98,23 @@ public class RenderSectionClient {
 
         this.clientParameters = clientParameters;
 
-        final Path projectPath = Paths.get(clientParameters.rootDirectory,
-                                           clientParameters.project).toAbsolutePath();
+        Path projectPath = Paths.get(clientParameters.rootDirectory, clientParameters.project).toAbsolutePath();
+        Path sectionPath;
 
-        final String sectionsAtScaleName = "sections_at_" + clientParameters.scale;
-        final Path sectionPath = Paths.get(projectPath.toString(),
+        if(clientParameters.customOutPutFolder.length() > 0)
+        {
+            projectPath = Paths.get(clientParameters.rootDirectory, clientParameters.customOutPutFolder, clientParameters.customSubFolder).toAbsolutePath();            
+            this.sectionDirectory = projectPath.toFile();
+        }
+        else
+        {
+        	final String sectionsAtScaleName = "sections_at_" + clientParameters.scale;
+        	sectionPath = Paths.get(projectPath.toString(),
                                            clientParameters.stack,
                                            sectionsAtScaleName).toAbsolutePath();
+            this.sectionDirectory = sectionPath.toFile();
+        }
 
-        this.sectionDirectory = sectionPath.toFile();
         ensureWritableDirectory(this.sectionDirectory);
 
         // set cache size to 50MB so that masks get cached but most of RAM is left for target image
@@ -113,7 +133,25 @@ public class RenderSectionClient {
                  z, sectionDirectory, renderDataClient);
 
         final Bounds layerBounds = renderDataClient.getLayerBounds(clientParameters.stack, z);
-        final String parametersUrl =
+
+        String parametersUrl; 
+        if(clientParameters.bounds != null && clientParameters.bounds.size() == 4) //Read bounds from supplied parameters
+        {
+            LOG.debug("Using user bounds");
+            parametersUrl = 
+                renderDataClient.getRenderParametersUrlString(clientParameters.stack,
+                                                              clientParameters.bounds.get(0), //Min X 
+                                                              clientParameters.bounds.get(2), //Min Y
+                                                              z,
+                                                              clientParameters.bounds.get(1) - clientParameters.bounds.get(0), //Width
+                                                              clientParameters.bounds.get(3) - clientParameters.bounds.get(2), //Height
+                                                              clientParameters.scale);
+
+        }
+        else //Get bounds from render
+        {
+            LOG.debug("Using render bounds");
+            parametersUrl =
                 renderDataClient.getRenderParametersUrlString(clientParameters.stack,
                                                               layerBounds.getMinX(),
                                                               layerBounds.getMinY(),
@@ -121,7 +159,8 @@ public class RenderSectionClient {
                                                               (int) (layerBounds.getDeltaX() + 0.5),
                                                               (int) (layerBounds.getDeltaY() + 0.5),
                                                               clientParameters.scale);
-
+        }
+        
         LOG.debug("generateImageForZ: {}, loading {}", z, parametersUrl);
 
         final RenderParameters renderParameters = RenderParameters.loadFromUrl(parametersUrl);
@@ -145,16 +184,23 @@ public class RenderSectionClient {
     }
 
     private File getSectionFile(final Double z) {
-        final int thousands = z.intValue() / 1000;
-        final File thousandsDir = new File(sectionDirectory, getNumericDirectoryName(thousands));
 
-        final int hundreds = (z.intValue() % 1000) / 100;
-        final File hundredsDir = new File(thousandsDir, String.valueOf(hundreds));
+        String fName = (clientParameters.padFileNameWithZeroes == true) ? String.format("%05d", z.intValue()) : String.valueOf(z.floatValue());
 
-        ensureWritableDirectory(hundredsDir);
+        if(clientParameters.customOutPutFolder.length() < 1)
+        {
+            final int thousands = z.intValue() / 1000;
+            final File thousandsDir = new File(sectionDirectory, getNumericDirectoryName(thousands));
 
-        return new File(hundredsDir, z + "." + clientParameters.format.toLowerCase());
-    }
+            final int hundreds = (z.intValue() % 1000) / 100;
+            final File hundredsDir = new File(thousandsDir, String.valueOf(hundreds));
+        	ensureWritableDirectory(hundredsDir);
+			return new File(hundredsDir, z + "." + clientParameters.format.toLowerCase());		
+        }
+
+        ensureWritableDirectory(sectionDirectory);
+		return new File(sectionDirectory, fName + "." + clientParameters.format.toLowerCase());
+	}
 
     private void ensureWritableDirectory(final File directory) {
         // try twice to work around concurrent access issues
