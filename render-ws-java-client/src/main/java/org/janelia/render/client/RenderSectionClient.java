@@ -63,6 +63,12 @@ public class RenderSectionClient {
 
         @Parameter(names = "--padFileNamesWithZeros", description = "Pad outputfilenames with leading zeroes, i.e. 12.tiff -> 00012.tiff", required = false)
         private boolean padFileNameWithZeroes;
+
+        @Parameter(description = "Max intensity to render image", required = false)
+        private int maxIntensity=-1;
+
+        @Parameter(description = "Min intensity to render image", required = false)
+        private int minIntensity=-1;
     }
 
     /**
@@ -159,6 +165,19 @@ public class RenderSectionClient {
                                                               (int) (layerBounds.getDeltaX() + 0.5),
                                                               (int) (layerBounds.getDeltaY() + 0.5),
                                                               clientParameters.scale);
+        }
+        if ((clientParameters.minIntensity != -1) || (clientParameters.maxIntensity != -1)){
+            parametersUrl = parametersUrl + "?";
+            if (clientParameters.minIntensity != -1){
+                parametersUrl = parametersUrl + "minIntensity=" + clientParameters.minIntensity;
+                if (clientParameters.maxIntensity != -1){
+                    parametersUrl = parametersUrl + "&maxIntensity=" + clientParameters.maxIntensity;
+                }
+            }
+            else if (clientParameters.maxIntensity != -1){
+                parametersUrl = parametersUrl + "maxIntensity=" + clientParameters.maxIntensity;
+            }
+
         }
         
         LOG.debug("generateImageForZ: {}, loading {}", z, parametersUrl);
