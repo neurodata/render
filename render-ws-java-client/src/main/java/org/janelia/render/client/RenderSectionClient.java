@@ -51,6 +51,12 @@ public class RenderSectionClient {
 
         @Parameter(description = "Z values for sections to render", required = true)
         private List<Double> zValues;
+
+        @Parameter(description = "Max intensity to render image", required = false)
+        private int maxIntensity = null;
+
+        @Parameter(description = "Min intensity to render image", required = false)
+        private int minIntensity = null;
     }
 
     /**
@@ -121,7 +127,19 @@ public class RenderSectionClient {
                                                               (int) (layerBounds.getDeltaX() + 0.5),
                                                               (int) (layerBounds.getDeltaY() + 0.5),
                                                               clientParameters.scale);
-
+        if ((clientParameters.minIntensity != null) || (clientParameters.maxIntensity != null)){
+            parametersUrl = parametersUrl + "?"
+            if (clientParameters.minIntensity != null){
+                parametersUrl = parametersUrl + "minIntensity=" + clientParameters.minIntensity;
+                if (clientParameters.maxIntensity != null){
+                    parametersUrl = parametersUrl + "&maxIntensity=" + clientParameters.maxIntensity;
+                }
+            }
+            else if (clientParameters.maxIntensity != null){
+                parametersUrl = parametersUrl + "maxIntensity=" + clientParameters.maxIntensity;
+            }
+        }
+        
         LOG.debug("generateImageForZ: {}, loading {}", z, parametersUrl);
 
         final RenderParameters renderParameters = RenderParameters.loadFromUrl(parametersUrl);
