@@ -51,7 +51,6 @@ public class RenderSectionClient {
 
         @Parameter(description = "Z values for sections to render", required = true)
         private List<Double> zValues;
-<<<<<<< HEAD
 		
         @Parameter(names = "--bounds", description = "Bounds used for all layers: xmin, xmax, ymin,ymax", required = false)
         private List<Integer> bounds;
@@ -64,14 +63,12 @@ public class RenderSectionClient {
 
         @Parameter(names = "--padFileNamesWithZeros", description = "Pad outputfilenames with leading zeroes, i.e. 12.tiff -> 00012.tiff", required = false)
         private boolean padFileNameWithZeroes;
-=======
 
         @Parameter(description = "Max intensity to render image", required = false)
         private int maxIntensity = null;
 
         @Parameter(description = "Min intensity to render image", required = false)
         private int minIntensity = null;
->>>>>>> minmaxsectionclient
     }
 
     /**
@@ -168,8 +165,7 @@ public class RenderSectionClient {
                                                               (int) (layerBounds.getDeltaX() + 0.5),
                                                               (int) (layerBounds.getDeltaY() + 0.5),
                                                               clientParameters.scale);
-<<<<<<< HEAD
-=======
+
         if ((clientParameters.minIntensity != null) || (clientParameters.maxIntensity != null)){
             parametersUrl = parametersUrl + "?"
             if (clientParameters.minIntensity != null){
@@ -181,7 +177,7 @@ public class RenderSectionClient {
             else if (clientParameters.maxIntensity != null){
                 parametersUrl = parametersUrl + "maxIntensity=" + clientParameters.maxIntensity;
             }
->>>>>>> minmaxsectionclient
+
         }
         
         LOG.debug("generateImageForZ: {}, loading {}", z, parametersUrl);
