@@ -65,10 +65,10 @@ public class RenderSectionClient {
         private boolean padFileNameWithZeroes;
 
         @Parameter(description = "Max intensity to render image", required = false)
-        private int maxIntensity = null;
+        private int maxIntensity=-1;
 
         @Parameter(description = "Min intensity to render image", required = false)
-        private int minIntensity = null;
+        private int minIntensity=-1;
     }
 
     /**
@@ -165,16 +165,16 @@ public class RenderSectionClient {
                                                               (int) (layerBounds.getDeltaX() + 0.5),
                                                               (int) (layerBounds.getDeltaY() + 0.5),
                                                               clientParameters.scale);
-
-        if ((clientParameters.minIntensity != null) || (clientParameters.maxIntensity != null)){
-            parametersUrl = parametersUrl + "?"
-            if (clientParameters.minIntensity != null){
+        }
+        if ((clientParameters.minIntensity != -1) || (clientParameters.maxIntensity != -1)){
+            parametersUrl = parametersUrl + "?";
+            if (clientParameters.minIntensity != -1){
                 parametersUrl = parametersUrl + "minIntensity=" + clientParameters.minIntensity;
-                if (clientParameters.maxIntensity != null){
+                if (clientParameters.maxIntensity != -1){
                     parametersUrl = parametersUrl + "&maxIntensity=" + clientParameters.maxIntensity;
                 }
             }
-            else if (clientParameters.maxIntensity != null){
+            else if (clientParameters.maxIntensity != -1){
                 parametersUrl = parametersUrl + "maxIntensity=" + clientParameters.maxIntensity;
             }
 
