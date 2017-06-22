@@ -360,12 +360,12 @@ public class Render {
             // filter
             if (doFilter) {
                 final double mipmapScale = 1.0 / (1 << mipmapLevel);
-                //vtnf1.process(ipMipmap, mipmapScale);
-                //vtnf2.process(ipMipmap, mipmapScale);
-                //nlcf.process(ipMipmap, mipmapScale);
-                //clahe.process(ipMipmap, mipmapScale);
-                bgsub.process(ipMipmap, mipmapScale);
-                eqhist.process(ipMipmap, mipmapScale);
+                vtnf1.process(ipMipmap, mipmapScale);
+                vtnf2.process(ipMipmap, mipmapScale);
+                nlcf.process(ipMipmap, mipmapScale);
+                clahe.process(ipMipmap, mipmapScale);
+                //bgsub.process(ipMipmap, mipmapScale);
+                //eqhist.process(ipMipmap, mipmapScale);
             }
 
             filterStop = System.currentTimeMillis();
