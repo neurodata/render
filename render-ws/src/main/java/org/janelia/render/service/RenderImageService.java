@@ -110,6 +110,8 @@ public class RenderImageService {
                                         @QueryParam("scale") Double scale,
                                         @QueryParam("filter") final Boolean filter,
                                         @QueryParam("maxTileSpecsToRender") final Integer maxTileSpecsToRender,
+                                        @QueryParam("maxIntensity") final double maxIntensity,
+                                        @QueryParam("minIntensity") final double minIntensity,
                                         @Context final Request request) {
 
         LOG.info("renderJpegImageForZ: entry, owner={}, project={}, stack={}, z={}, scale={}, filter={}",
@@ -122,7 +124,7 @@ public class RenderImageService {
         final ResponseHelper responseHelper = new ResponseHelper(request, getStackMetaData(owner, project, stack));
         if (responseHelper.isModified()) {
             final RenderParameters renderParameters =
-                    renderDataService.getRenderParametersForZ(owner, project, stack, z, scale, filter);
+                    renderDataService.getRenderParametersForZ(owner, project, stack, z, scale, filter,minIntensity,maxIntensity);
             return RenderServiceUtil.renderJpegImage(renderParameters, maxTileSpecsToRender, responseHelper);
         } else {
             return responseHelper.getNotModifiedResponse();
@@ -142,6 +144,8 @@ public class RenderImageService {
                                        @QueryParam("scale") Double scale,
                                        @QueryParam("filter") final Boolean filter,
                                        @QueryParam("maxTileSpecsToRender") final Integer maxTileSpecsToRender,
+                                       @QueryParam("maxIntensity") final double maxIntensity,
+                                       @QueryParam("minIntensity") final double minIntensity,
                                        @Context final Request request) {
 
         LOG.info("renderPngImageForZ: entry, owner={}, project={}, stack={}, z={}, scale={}, filter={}",
@@ -154,7 +158,7 @@ public class RenderImageService {
         final ResponseHelper responseHelper = new ResponseHelper(request, getStackMetaData(owner, project, stack));
         if (responseHelper.isModified()) {
             final RenderParameters renderParameters =
-                    renderDataService.getRenderParametersForZ(owner, project, stack, z, scale, filter);
+                    renderDataService.getRenderParametersForZ(owner, project, stack, z, scale, filter,minIntensity,maxIntensity);
             return RenderServiceUtil.renderPngImage(renderParameters, maxTileSpecsToRender, responseHelper);
         } else {
             return responseHelper.getNotModifiedResponse();
@@ -174,6 +178,8 @@ public class RenderImageService {
                                         @QueryParam("scale") Double scale,
                                         @QueryParam("filter") final Boolean filter,
                                         @QueryParam("maxTileSpecsToRender") final Integer maxTileSpecsToRender,
+                                        @QueryParam("maxIntensity") final double maxIntensity,
+                                        @QueryParam("minIntensity") final double minIntensity,
                                         @Context final Request request) {
 
         LOG.info("renderTiffImageForZ: entry, owner={}, project={}, stack={}, z={}, scale={}, filter={}",
@@ -186,7 +192,7 @@ public class RenderImageService {
         final ResponseHelper responseHelper = new ResponseHelper(request, getStackMetaData(owner, project, stack));
         if (responseHelper.isModified()) {
             final RenderParameters renderParameters =
-                    renderDataService.getRenderParametersForZ(owner, project, stack, z, scale, filter);
+                    renderDataService.getRenderParametersForZ(owner, project, stack, z, scale, filter,minIntensity,maxIntensity);
             return RenderServiceUtil.renderTiffImage(renderParameters, maxTileSpecsToRender, responseHelper);
         } else {
             return responseHelper.getNotModifiedResponse();
