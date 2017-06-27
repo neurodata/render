@@ -64,10 +64,10 @@ public class RenderSectionClient {
         @Parameter(names = "--padFileNamesWithZeros", description = "Pad outputfilenames with leading zeroes, i.e. 12.tiff -> 00012.tiff", required = false)
         private boolean padFileNameWithZeroes;
 
-        @Parameter(description = "Max intensity to render image", required = false)
+        @Parameter(names = "--maxIntensity",description = "Max intensity to render image", required = false)
         private int maxIntensity=-1;
 
-        @Parameter(description = "Min intensity to render image", required = false)
+        @Parameter(names = "--minIntensity",description = "Min intensity to render image", required = false)
         private int minIntensity=-1;
     }
 
