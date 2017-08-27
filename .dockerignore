@@ -3,3 +3,9 @@ htmlcov/
 test-reports/
 Dockerfile
 examples/
+*/target
+.gitignore
+.metadata/
+.idea/
+.settings/
+docker_setup.py
