@@ -41,6 +41,7 @@ import ij.ImagePlus;
 import ij.io.FileInfo;
 import ij.io.Opener;
 import ij.io.TiffEncoder;
+import ij.process.ImageConverter;
 import ij.process.ByteProcessor;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
