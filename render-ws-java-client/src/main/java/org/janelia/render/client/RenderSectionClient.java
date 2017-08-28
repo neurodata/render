@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.janelia.alignment.Render;
+import org.janelia.alignment.ArgbRenderer;
 import org.janelia.alignment.RenderParameters;
 import org.janelia.alignment.Utils;
 import org.janelia.alignment.spec.Bounds;
@@ -45,6 +45,9 @@ public class RenderSectionClient {
 
         @Parameter(names = "--doFilter", description = "Use ad hoc filter to support alignment", required = false, arity = 1)
         private boolean doFilter = true;
+
+        @Parameter(names = "--channels", description = "Specify channel(s) and weights to render (e.g. 'DAPI' or 'DAPI__0.7__TdTomato__0.3')", required = false)
+        private String channels;
 
         @Parameter(names = "--fillWithNoise", description = "Fill image with noise before rendering to improve point match derivation", required = false, arity = 1)
         private boolean fillWithNoise = true;
@@ -121,7 +124,8 @@ public class RenderSectionClient {
             this.sectionDirectory = sectionPath.toFile();
         }
 
-        ensureWritableDirectory(this.sectionDirectory);
+        this.sectionDirectory = sectionPath.toFile();
+        FileUtil.ensureWritableDirectory(this.sectionDirectory);
 
         // set cache size to 50MB so that masks get cached but most of RAM is left for target image
         final int maxCachedPixels = 50 * 1000000;
@@ -184,6 +188,7 @@ public class RenderSectionClient {
 
         final RenderParameters renderParameters = RenderParameters.loadFromUrl(parametersUrl);
         renderParameters.setDoFilter(clientParameters.doFilter);
+        renderParameters.setChannels(clientParameters.channels);
 
         final File sectionFile = getSectionFile(z);
 
@@ -195,7 +200,7 @@ public class RenderSectionClient {
             sectionImage.getGraphics().drawImage(ip.createImage(), 0, 0, null);
         }
 
-        Render.render(renderParameters, sectionImage, imageProcessorCache);
+        ArgbRenderer.render(renderParameters, sectionImage, imageProcessorCache);
 
         Utils.saveImage(sectionImage, sectionFile.getAbsolutePath(), clientParameters.format, true, 0.85f);
 
@@ -221,24 +226,6 @@ public class RenderSectionClient {
 		return new File(sectionDirectory, fName + "." + clientParameters.format.toLowerCase());
 	}
 
-    private void ensureWritableDirectory(final File directory) {
-        // try twice to work around concurrent access issues
-        if (! directory.exists()) {
-            if (! directory.mkdirs()) {
-                if (! directory.exists()) {
-                    // last try
-                    if (! directory.mkdirs()) {
-                        if (! directory.exists()) {
-                            throw new IllegalArgumentException("failed to create " + directory);
-                        }
-                    }
-                }
-            }
-        }
-        if (! directory.canWrite()) {
-            throw new IllegalArgumentException("not allowed to write to " + directory);
-        }
-    }
 
     private String getNumericDirectoryName(final int value) {
         String pad = "00";

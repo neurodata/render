@@ -33,6 +33,7 @@ import org.janelia.alignment.spec.ResolvedTileSpecCollection;
 import org.janelia.alignment.spec.SectionData;
 import org.janelia.alignment.spec.TileBounds;
 import org.janelia.alignment.spec.TileSpec;
+import org.janelia.render.service.dao.TileSpecLayout;
 import org.janelia.alignment.spec.TransformSpec;
 import org.janelia.alignment.spec.stack.MipmapPathBuilder;
 import org.janelia.alignment.spec.stack.StackId;
@@ -84,9 +85,10 @@ public class RenderDataService {
                                   @PathParam("stack") final String stack,
                                   @QueryParam("minZ") final Double minZ,
                                   @QueryParam("maxZ") final Double maxZ,
+                                  @QueryParam("format") final TileSpecLayout.Format format,
                                   @Context final UriInfo uriInfo) {
 
-        return getLayoutFileForZRange(owner, project, stack, minZ, maxZ, uriInfo);
+        return getLayoutFileForZRange(owner, project, stack, minZ, maxZ, format, uriInfo);
     }
 
     @Path("project/{project}/stack/{stack}/z/{z}/layoutFile")
@@ -100,9 +102,10 @@ public class RenderDataService {
                                       @PathParam("project") final String project,
                                       @PathParam("stack") final String stack,
                                       @PathParam("z") final Double z,
+                                      @QueryParam("format") final TileSpecLayout.Format format,
                                       @Context final UriInfo uriInfo) {
 
-        return getLayoutFileForZRange(owner, project, stack, z, z, uriInfo);
+        return getLayoutFileForZRange(owner, project, stack, z, z, format, uriInfo);
     }
 
     @Path("project/{project}/stack/{stack}/zRange/{minZ},{maxZ}/layoutFile")
@@ -117,14 +120,16 @@ public class RenderDataService {
                                            @PathParam("stack") final String stack,
                                            @PathParam("minZ") final Double minZ,
                                            @PathParam("maxZ") final Double maxZ,
+                                           @QueryParam("format") final TileSpecLayout.Format format,
                                            @Context final UriInfo uriInfo) {
 
-        LOG.info("getLayoutFileForZRange: entry, owner={}, project={}, stack={}, minZ={}, maxZ={}",
-                 owner, project, stack, minZ, maxZ);
+        LOG.info("getLayoutFileForZRange: entry, owner={}, project={}, stack={}, minZ={}, maxZ={}, format={}",
+                 owner, project, stack, minZ, maxZ, format);
 
         Response response = null;
         try {
             final StackId stackId = new StackId(owner, project, stack);
+            final StackMetaData stackMetaData = getStackMetaData(stackId);
 
             final String requestUri = uriInfo.getRequestUri().toString();
             final String stackUri = "/stack/" + stack + "/";
@@ -134,7 +139,7 @@ public class RenderDataService {
                 @Override
                 public void write(final OutputStream output)
                         throws IOException, WebApplicationException {
-                    renderDao.writeLayoutFileData(stackId, stackRequestUri, minZ, maxZ, output);
+                    renderDao.writeLayoutFileData(stackMetaData, stackRequestUri, minZ, maxZ, format, output);
                 }
             };
             response = Response.ok(responseOutput).build();
@@ -795,7 +800,7 @@ public class RenderDataService {
 
         List<TileSpec> tileSpecList = null;
         try {
-            final RenderParameters parameters = getRenderParametersForZ(owner, project, stack, z, 1.0, false);
+            final RenderParameters parameters = getRenderParametersForZ(owner, project, stack, z, 1.0, false, null);
             tileSpecList = parameters.getTileSpecs();
         } catch (final Throwable t) {
             RenderServiceUtil.throwServiceException(t);
@@ -827,7 +832,7 @@ public class RenderDataService {
 
         List<LastTileTransform> lastTileTransformList = null;
         try {
-            final RenderParameters parameters = getRenderParametersForZ(owner, project, stack, z, 1.0, false);
+            final RenderParameters parameters = getRenderParametersForZ(owner, project, stack, z, 1.0, false, null);
             final List<TileSpec> tileSpecList = parameters.getTileSpecs();
             lastTileTransformList = new ArrayList<>(tileSpecList.size());
             for (final TileSpec tileSpec : tileSpecList) {
@@ -872,8 +877,7 @@ public class RenderDataService {
                                                     @PathParam("z") final Double z,
                                                     @QueryParam("scale") final Double scale,
                                                     @QueryParam("filter") final Boolean filter,
-                                                    @QueryParam("minIntensity") final Double minIntensity,
-                                                    @QueryParam("maxIntensity") final Double maxIntensity) {
+                                                    @QueryParam("channels") final String channels) {
 
         LOG.info("getRenderParametersForZ: entry, owner={}, project={}, stack={}, z={}, scale={}, minIntensity={}, maxIntensity={}",
                  owner, project, stack, z, scale,minIntensity,maxIntensity);
@@ -885,13 +889,8 @@ public class RenderDataService {
 
             parameters = renderDao.getParameters(stackId, z, scale);
             parameters.setDoFilter(filter);
-            if (minIntensity != null) {
-                parameters.setMinIntensity(minIntensity);
-            }
-            if (maxIntensity != null) {
-                parameters.setMaxIntensity(maxIntensity);
-            }
-            
+            parameters.setChannels(channels);
+
             final MipmapPathBuilder mipmapPathBuilder = stackMetaData.getCurrentMipmapPathBuilder();
             if (mipmapPathBuilder != null) {
                 parameters.setMipmapPathBuilder(mipmapPathBuilder);
@@ -929,9 +928,11 @@ public class RenderDataService {
                                                         @PathParam("scale") final Double scale,
                                                         @QueryParam("filter") final Boolean filter,
                                                         @QueryParam("binaryMask") final Boolean binaryMask,
-                                                        @QueryParam("convertToGray") final Boolean convertToGray) {
+                                                        @QueryParam("convertToGray") final Boolean convertToGray,
+                                                        @QueryParam("channels") final String channels) {
 
-        return getExternalRenderParameters(owner, project, stack, null, x, y, z, width, height, scale, filter, binaryMask, convertToGray);
+        return getExternalRenderParameters(owner, project, stack, null, x, y, z, width, height, scale, filter,
+                                           binaryMask, convertToGray, channels);
     }
 
     /**
@@ -959,8 +960,10 @@ public class RenderDataService {
                                                                   @QueryParam("scale") final Double scale,
                                                                   @QueryParam("filter") final Boolean filter,
                                                                   @QueryParam("binaryMask") final Boolean binaryMask,
-                                                                  @QueryParam("convertToGray") final Boolean convertToGray) {
-        return getExternalRenderParameters(owner, project, stack, null, x, y, z, width, height, scale, filter, binaryMask, convertToGray);
+                                                                  @QueryParam("convertToGray") final Boolean convertToGray,
+                                                                  @QueryParam("channels") final String channels) {
+        return getExternalRenderParameters(owner, project, stack, null, x, y, z, width, height, scale, filter,
+                                           binaryMask, convertToGray, channels);
     }
 
     /**
@@ -989,7 +992,8 @@ public class RenderDataService {
                                                         @PathParam("scale") final Double scale,
                                                         @QueryParam("filter") final Boolean filter,
                                                         @QueryParam("binaryMask") final Boolean binaryMask,
-                                                        @QueryParam("convertToGray") final Boolean convertToGray) {
+                                                        @QueryParam("convertToGray") final Boolean convertToGray,
+                                                        @QueryParam("channels") final String channels) {
 
         LOG.info("getExternalRenderParameters: entry, owner={}, project={}, stack={}, groupId={}, x={}, y={}, z={}, width={}, height={}, scale={}, filter={}, binaryMask={}, convertToGray={}",
                  owner, project, stack, groupId, x, y, z, width, height, scale, filter, binaryMask, convertToGray);
@@ -1002,6 +1006,7 @@ public class RenderDataService {
             parameters.setDoFilter(filter);
             parameters.setBinaryMask(binaryMask);
             parameters.setConvertToGray(convertToGray);
+            parameters.setChannels(channels);
         } catch (final Throwable t) {
             RenderServiceUtil.throwServiceException(t);
         }
@@ -1034,8 +1039,10 @@ public class RenderDataService {
                                                                   @QueryParam("scale") final Double scale,
                                                                   @QueryParam("filter") final Boolean filter,
                                                                   @QueryParam("binaryMask") final Boolean binaryMask,
-                                                                  @QueryParam("convertToGray") final Boolean convertToGray) {
-        return getExternalRenderParameters(owner, project, stack, groupId, x, y, z, width, height, scale, filter, binaryMask, convertToGray);
+                                                                  @QueryParam("convertToGray") final Boolean convertToGray,
+                                                                  @QueryParam("channels") final String channels) {
+        return getExternalRenderParameters(owner, project, stack, groupId, x, y, z, width, height, scale, filter,
+                                           binaryMask, convertToGray, channels);
     }
 
     /**
