@@ -847,16 +847,6 @@ public class RenderDataService {
         return lastTileTransformList;
     }
 
-    public RenderParameters getRenderParametersForZ(final String owner,
-                                                    final String project,
-                                                    final String stack,
-                                                    final Double z,
-                                                    final Double scale,
-                                                    final Boolean filter) {
-      return getRenderParametersForZ(owner,project,stack,z,scale,filter,null,null);
-
-   }
-
     /**
      * @return render parameters for specified layer with flattened (and therefore resolved)
      *         transform specs suitable for external use.
@@ -879,8 +869,8 @@ public class RenderDataService {
                                                     @QueryParam("filter") final Boolean filter,
                                                     @QueryParam("channels") final String channels) {
 
-        LOG.info("getRenderParametersForZ: entry, owner={}, project={}, stack={}, z={}, scale={}, minIntensity={}, maxIntensity={}",
-                 owner, project, stack, z, scale,minIntensity,maxIntensity);
+        LOG.info("getRenderParametersForZ: entry, owner={}, project={}, stack={}, z={}, scale={}",
+                 owner, project, stack, z, scale);
 
         RenderParameters parameters = null;
         try {

@@ -124,7 +124,6 @@ public class RenderSectionClient {
             this.sectionDirectory = sectionPath.toFile();
         }
 
-        this.sectionDirectory = sectionPath.toFile();
         FileUtil.ensureWritableDirectory(this.sectionDirectory);
 
         // set cache size to 50MB so that masks get cached but most of RAM is left for target image
@@ -218,11 +217,11 @@ public class RenderSectionClient {
 
             final int hundreds = (z.intValue() % 1000) / 100;
             final File hundredsDir = new File(thousandsDir, String.valueOf(hundreds));
-        	ensureWritableDirectory(hundredsDir);
+        	FileUtil.ensureWritableDirectory(hundredsDir);
 			return new File(hundredsDir, z + "." + clientParameters.format.toLowerCase());		
         }
 
-        ensureWritableDirectory(sectionDirectory);
+        FileUtil.ensureWritableDirectory(sectionDirectory);
 		return new File(sectionDirectory, fName + "." + clientParameters.format.toLowerCase());
 	}
 
