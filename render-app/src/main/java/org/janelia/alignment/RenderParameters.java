@@ -63,10 +63,10 @@ public class RenderParameters implements Serializable {
     @Parameter(names = "--tile_spec_url", description = "URL to JSON tile spec", required = false)
     private String tileSpecUrl;
 
-    @Parameter(names = "--res", description = " Mesh resolution, specified by the desired size of a mesh cell (triangle) in pixels", required = false)
+    @Parameter(names = {"--res", "--meshCellSize"}, description = " Mesh resolution, specified by the desired size of a mesh cell (triangle) in pixels", required = false)
     public double meshCellSize;
 
-    @Parameter(names = "--min_res", description = " Miinimal mesh resolution, specified by the desired size of a mesh cell (triangle) in pixels", required = false)
+    @Parameter(names = {"--min_res", "--minMeshCellSize"}, description = " Minimal mesh resolution, specified by the desired size of a mesh cell (triangle) in pixels", required = false)
     public double minMeshCellSize = 0;
 
     @Parameter(names = "--in", description = "Path to the input image if any", required = false)
@@ -197,6 +197,7 @@ public class RenderParameters implements Serializable {
         this.excludeMask = false;
         this.doFilter = false;
         this.backgroundRGBColor = null;
+        this.channels = null;
         this.parametersUrl = null;
 
         this.tileSpecs = new ArrayList<>();
@@ -636,6 +637,22 @@ public class RenderParameters implements Serializable {
     }
 
     /**
+     * @return true if this render spec has at least one tile with a mask.
+     */
+    public boolean hasMasks() {
+        boolean hasMasks = false;
+        if (! excludeMask) {
+            for (final TileSpec tileSpec : tileSpecs) {
+                if (tileSpec.hasMasks()) {
+                    hasMasks = true;
+                    break;
+                }
+            }
+        }
+        return hasMasks;
+    }
+
+    /**
      * Opens the target/input image specified by these parameters or
      * creates a new (in-memory) image if no input image was specified.
      *
@@ -728,6 +745,10 @@ public class RenderParameters implements Serializable {
 
         if (backgroundRGBColor != null) {
             sb.append("backgroundRGBColor=").append(backgroundRGBColor).append(", ");
+        }
+
+        if (channels != null) {
+            sb.append("channels=").append(channels).append(", ");
         }
 
         if (in != null) {
@@ -834,6 +855,7 @@ public class RenderParameters implements Serializable {
             quality = mergedValue(quality, baseParameters.quality, DEFAULT_QUALITY);
             doFilter = mergedValue(doFilter, baseParameters.doFilter, false);
             backgroundRGBColor = mergedValue(backgroundRGBColor, baseParameters.backgroundRGBColor);
+            channels = mergedValue(channels, baseParameters.channels);
             mipmapPathBuilder = mergedValue(mipmapPathBuilder, baseParameters.mipmapPathBuilder);
 
             tileSpecs.addAll(baseParameters.tileSpecs);

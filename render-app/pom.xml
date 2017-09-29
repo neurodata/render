@@ -56,11 +56,11 @@
     <repositories>
         <repository>
             <id>imagej.releases</id>
-            <url>http://maven.imagej.net/content/repositories/releases</url>
+            <url>https://maven.imagej.net/content/repositories/releases</url>
         </repository>
         <repository>
             <id>imagej.snapshots</id>
-            <url>http://maven.imagej.net/content/repositories/snapshots</url>
+            <url>https://maven.imagej.net/content/repositories/snapshots</url>
         </repository>
     </repositories>
 
@@ -80,6 +80,16 @@
         <dependency>
             <groupId>net.imagej</groupId>
             <artifactId>ij</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>net.imglib2</groupId>
+            <artifactId>imglib2</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>net.imglib2</groupId>
+            <artifactId>imglib2-realtransform</artifactId>
         </dependency>
 
         <dependency>

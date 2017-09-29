@@ -5,8 +5,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -30,6 +32,7 @@ import org.janelia.alignment.spec.stack.StackId;
 import org.janelia.alignment.spec.stack.StackMetaData;
 import org.janelia.alignment.spec.stack.StackVersion;
 import org.janelia.render.client.request.WaitingRetryHandler;
+import org.janelia.render.client.response.EmptyResponseHandler;
 import org.janelia.render.client.response.JsonResponseHandler;
 import org.janelia.render.client.response.ResourceCreatedResponseHandler;
 import org.janelia.render.client.response.TextResponseHandler;
@@ -183,7 +186,7 @@ public class RenderDataClient {
      * @param  minZ   (optional) only include layers with z values greater than or equal to this minimum.
      * @param  maxZ   (optional) only include layers with z values less than or equal to this maximum.
      *
-     * @return section data for all layers in the specified stack.
+     * @return section data for set of layers in the specified stack.
      *
      * @throws IOException
      *   if the request fails for any reason.
@@ -218,6 +221,56 @@ public class RenderDataClient {
         LOG.info("getStackSectionData: submitting {}", requestContext);
 
         return httpClient.execute(httpGet, responseHandler);
+    }
+
+    /**
+     * @param  stack            name of stack.
+     * @param  minZ             (optional) only include layers with z values greater than or equal to this minimum.
+     * @param  maxZ             (optional) only include layers with z values less than or equal to this maximum.
+     * @param  explicitZValues  (optional) set of z values to explicitly include.
+     *
+     * @return section data for set of layers in the specified stack.
+     *
+     * @throws IOException
+     *   if the request fails for any reason.
+     */
+    public List<SectionData> getStackSectionData(final String stack,
+                                                 final Double minZ,
+                                                 final Double maxZ,
+                                                 final Set<Double> explicitZValues)
+            throws IOException {
+
+        final List<SectionData> sectionDataList;
+
+        if ((explicitZValues == null) || (explicitZValues.size() == 0)) {
+
+            sectionDataList = getStackSectionData(stack, minZ, maxZ);
+
+        } else {
+
+            // if range is specified in any way, include everything in range plus explicit z values
+            double min = (minZ == null) ? -Double.MAX_VALUE : minZ;
+            final double max = (maxZ == null) ? Double.MAX_VALUE : maxZ;
+
+            // if range is not specified, exclude everything except explicit z values
+            if ((minZ == null) && (maxZ == null)) {
+                min = Double.MAX_VALUE;
+            }
+
+            final List<SectionData> allSectionDataList = getStackSectionData(stack, null, null);
+            sectionDataList = new ArrayList<>(allSectionDataList.size());
+            for (final SectionData sectionData : allSectionDataList) {
+                final Double z = sectionData.getZ();
+                if ( explicitZValues.contains(z) || ((z >= min) && (z <= max)) ) {
+                    sectionDataList.add(sectionData);
+                }
+            }
+
+            LOG.info("getStackSectionData: returning data for {} (filtered) sections", sectionDataList.size());
+
+        }
+
+        return sectionDataList;
     }
 
     /**
@@ -374,6 +427,35 @@ public class RenderDataClient {
         httpPut.setEntity(stringEntity);
 
         LOG.info("cloneStackVersion: submitting {}", requestContext);
+
+        httpClient.execute(httpPut, responseHandler);
+    }
+
+    /**
+     * Renames the specified stack.
+     *
+     * @param  fromStack       source stack to rename.
+     * @param  toStackId       new owner, project, and/or stack names.
+     *
+     * @throws IOException
+     *   if the request fails for any reason.
+     */
+    public void renameStack(final String fromStack,
+                            final StackId toStackId)
+            throws IOException {
+
+        final String json = toStackId.toJson();
+        final StringEntity stringEntity = new StringEntity(json, ContentType.APPLICATION_JSON);
+
+        final URI uri = getUri(urls.getStackUrlString(fromStack) + "/stackId");
+
+        final String requestContext = "PUT " + uri;
+        final EmptyResponseHandler responseHandler = new EmptyResponseHandler(requestContext);
+
+        final HttpPut httpPut = new HttpPut(uri);
+        httpPut.setEntity(stringEntity);
+
+        LOG.info("renameStack: submitting {} with body {}", requestContext, json);
 
         httpClient.execute(httpPut, responseHandler);
     }

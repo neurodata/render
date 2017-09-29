@@ -2,6 +2,7 @@ package org.janelia.render.service.dao;
 
 import com.mongodb.BasicDBList;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.QueryOperators;
 import com.mongodb.bulk.BulkWriteResult;
@@ -552,27 +553,7 @@ public class RenderDao {
         final Collection<TileSpec> tileSpecs = resolvedTileSpecs.getTileSpecs();
 
         if (transformSpecs.size() > 0) {
-
-            final MongoCollection<Document> transformCollection = getTransformCollection(stackId);
-
-            final List<WriteModel<Document>> modelList = new ArrayList<>(transformSpecs.size());
-            Document query = new Document();
-            Document transformSpecObject;
-            for (final TransformSpec transformSpec : transformSpecs) {
-                query = new Document("id", transformSpec.getId());
-                transformSpecObject = Document.parse(transformSpec.toJson());
-                modelList.add(new ReplaceOneModel<>(query, transformSpecObject, MongoUtil.UPSERT_OPTION));
-            }
-
-            final BulkWriteResult result = transformCollection.bulkWrite(modelList, MongoUtil.UNORDERED_OPTION);
-
-            if (LOG.isDebugEnabled()) {
-                final String bulkResultMessage = MongoUtil.toMessage("transform specs", result, transformSpecs.size());
-                LOG.debug("saveResolvedTiles: {} using {}.initializeUnorderedBulkOp()",
-                          bulkResultMessage, MongoUtil.fullName(transformCollection), query.toJson());
-            }
-
-            // TODO: re-derive bounding boxes for all tiles (outside this collection) that reference modified transforms
+            saveResolvedTransforms(stackId, transformSpecs);
         }
 
         if (tileSpecs.size() > 0) {
@@ -945,9 +926,9 @@ public class RenderDao {
         final Document query = new Document("stackId.owner", owner);
         final Document sortCriteria = new Document(
                 "stackId.project", 1).append(
-                "currentVersion.cycleNumber", 1).append(
-                "currentVersion.cycleStepNumber", 1).append(
-                "stackId.name", 1);
+                "currentVersion.cycleNumber", -1).append(
+                "currentVersion.cycleStepNumber", -1).append(
+                "lastModifiedTimestamp", -1);
 
         try (MongoCursor<Document> cursor = stackMetaDataCollection.find(query).sort(sortCriteria).iterator()) {
             Document document;
@@ -2053,6 +2034,53 @@ public class RenderDao {
 
         LOG.debug("cloneCollection: inserted {} documents from {}.find(\\{}) to {}",
                   toCount, fromFullName, toFullName);
+    }
+
+    // Individually upserts each transform spec in the specified list, retrying if a duplicate key error occurs.
+    // This should work around concurrent update issues that MongoDB does not currently handle
+    // ( see https://jira.mongodb.org/browse/SERVER-14322 ).  If MongoDB ever corrects this issue,
+    // we may want to restore the original bulk write operation for storing shared transforms.
+    private void saveResolvedTransforms(final StackId stackId,
+                                        final Collection<TransformSpec> transformSpecs) {
+
+        final MongoCollection<Document> transformCollection = getTransformCollection(stackId);
+
+        int updateCount = 0;
+        int insertCount = 0;
+        UpdateResult result;
+        for (final TransformSpec transformSpec : transformSpecs) {
+            final Document query = new Document("id", transformSpec.getId());
+            final Document transformSpecObject = Document.parse(transformSpec.toJson());
+            try {
+                result = transformCollection.replaceOne(query,
+                                                        transformSpecObject,
+                                                        MongoUtil.UPSERT_OPTION);
+                if (result.getMatchedCount() > 0) {
+                    updateCount++;
+                } else {
+                    insertCount++;
+                }
+            } catch (final MongoException e) {
+                LOG.warn("possible duplicate key exception thrown for upsert, retrying operation ...", e);
+
+                result = transformCollection.replaceOne(query,
+                                                        transformSpecObject,
+                                                        MongoUtil.UPSERT_OPTION);
+                if (result.getMatchedCount() > 0) {
+                    updateCount++;
+                } else {
+                    insertCount++;
+                }
+            }
+
+        }
+
+        // TODO: re-derive bounding boxes for all tiles (outside this collection) that reference modified transforms
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("saveResolvedTransforms: inserted {} and updated {} documents in {})",
+                      insertCount, updateCount, transformCollection.getNamespace().getFullName());
+        }
     }
 
     private MongoCollection<Document> getStackMetaDataCollection() {

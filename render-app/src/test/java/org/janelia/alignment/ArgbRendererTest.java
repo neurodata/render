@@ -95,6 +95,34 @@ public class ArgbRendererTest {
     }
 
     @Test
+    public void testMixedMaskStitching() throws Exception {
+
+        // TODO: understand why v0.3 result differs slightly (at right edge) from v2.0 result
+        //       see expected_stitched_4_tiles_with_mixed_masks_v0.3.jpg for comparison
+
+        final File expectedFile =
+                new File(modulePath + "/src/test/resources/stitch-test/expected_stitched_4_tiles_with_mixed_masks.jpg");
+
+        final String[] args = {
+                "--tile_spec_url", "src/test/resources/stitch-test/test_4_tiles_with_mixed_masks.json",
+                "--out", outputFile.getAbsolutePath(),
+                "--width", "4576",
+                "--height", "4173",
+                "--scale", "0.05"
+        };
+
+        ArgbRenderer.renderUsingCommandLineArguments(args);
+
+        Assert.assertTrue("stitched file " + outputFile.getAbsolutePath() + " not created", outputFile.exists());
+
+        final String expectedDigestString = getDigestString(expectedFile);
+        final String actualDigestString = getDigestString(outputFile);
+
+        Assert.assertEquals("stitched file MD5 hash differs from expected result",
+                            expectedDigestString, actualDigestString);
+    }
+
+    @Test
     public void testMultichannelStitching() throws Exception {
 
         File expectedFile = new File(modulePath + "/src/test/resources/multichannel-test/expected_dapi_1_0.jpg");
@@ -341,7 +369,7 @@ public class ArgbRendererTest {
                             expectedDigestString, actualDigestString);
     }
 
-    private String getDigestString(final File file) throws Exception {
+    public static String getDigestString(final File file) throws Exception {
         final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
         final FileInputStream fileInputStream = new FileInputStream(file);
         final DigestInputStream digestInputStream = new DigestInputStream(fileInputStream, messageDigest);
@@ -360,7 +388,7 @@ public class ArgbRendererTest {
         return sb.toString();
     }
 
-    private void deleteTestFile(final File file) {
+    public static void deleteTestFile(final File file) {
         if ((file != null) && file.exists()) {
             if (file.delete()) {
                 LOG.info("deleteTestFile: deleted " + file.getAbsolutePath());
