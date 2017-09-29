@@ -26,3 +26,5 @@ release.properties
 
 settings.json
 .metadata/
+
+.DS_Store
