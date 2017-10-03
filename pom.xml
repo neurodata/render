@@ -18,18 +18,7 @@
         <module>trakem2-scripts</module>
         <module>docs</module>
     </modules>
-    <distributionManagement>
-        <repository>
-            <id>central</id>
-            <name>aibs-artifactory-releases</name>
-            <url>http://aibs-artifactory.corp.alleninstitute.org:80/artifactory/maven-local</url>
-        </repository>
-        <snapshotRepository>
-            <id>snapshots</id>
-            <name>aibs-artifactory-snapshots</name>
-            <url>http://aibs-artifactory.corp.alleninstitute.org:80/artifactory/maven-local</url>
-        </snapshotRepository>
-    </distributionManagement>
+
     <repositories>
         <!-- NB: for project parent -->
         <repository>
