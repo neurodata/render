@@ -178,9 +178,9 @@
     </dependencies>
 
     <properties>
-        <!--<resteasy.version>3.0.8.Final</resteasy.version>-->
+        <!---<resteasy.version>3.0.8.Final</resteasy.version>-->
         <resteasy.version>2.3.7.Final</resteasy.version>
-        <jetty.version>9.2.11.v20150529</jetty.version>
+        <jetty.version>9.4.6</jetty.version>
     </properties>
 
 </project>
