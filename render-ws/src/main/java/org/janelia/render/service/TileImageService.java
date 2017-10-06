@@ -1,6 +1,7 @@
 package org.janelia.render.service;
 
 import java.net.UnknownHostException;
+import java.util.Set;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -29,7 +30,7 @@ import io.swagger.annotations.ApiResponses;
  *
  * @author Eric Trautman
  */
-@Path("/v1/owner/{owner}")
+@Path("/")
 @Api(tags = {"Tile Image APIs"})
 public class TileImageService {
 
@@ -49,7 +50,7 @@ public class TileImageService {
         this.tileDataService = tileDataService;
     }
 
-    @Path("project/{project}/stack/{stack}/tile/{tileId}/jpeg-image")
+    @Path("v1/owner/{owner}/project/{project}/stack/{stack}/tile/{tileId}/jpeg-image")
     @GET
     @Produces(RenderServiceUtil.IMAGE_JPEG_MIME_TYPE)
     @ApiOperation(value = "Render JPEG image for a tile")
@@ -66,7 +67,9 @@ public class TileImageService {
                                            @QueryParam("filter") final Boolean filter,
                                            @QueryParam("excludeMask") final Boolean excludeMask,
                                            @QueryParam("normalizeForMatching") final Boolean normalizeForMatching,
-                                           @QueryParam("removeAllOption") final Boolean removeAllOption,
+                                           @QueryParam("excludeTransformsAfterLast") final Set<String> excludeAfterLastLabels,
+                                           @QueryParam("excludeFirstTransformAndAllAfter") final Set<String> excludeFirstAndAllAfterLabels,
+                                           @QueryParam("excludeAllTransforms") final Boolean excludeAllTransforms,
                                            @QueryParam("minIntensity") final Double minIntensity,
                                            @QueryParam("maxIntensity") final Double maxIntensity,
                                            @QueryParam("channels") final String channels,
@@ -80,15 +83,18 @@ public class TileImageService {
             final RenderParameters renderParameters =
                     tileDataService.getRenderParameters(owner, project, stack, tileId,
                                                         width, height, scale,
-                                                        filter, false, excludeMask, normalizeForMatching,
-                                                         minIntensity, maxIntensity,removeAllOption,channels);
+                                                        filter, false, excludeMask,
+                                                        normalizeForMatching,
+                                                        excludeAfterLastLabels, excludeFirstAndAllAfterLabels,
+                                                        excludeAllTransforms,
+                                                        minIntensity, maxIntensity, channels);
             return RenderServiceUtil.renderJpegImage(renderParameters, null, responseHelper);
         } else {
             return responseHelper.getNotModifiedResponse();
         }
     }
 
-    @Path("project/{project}/stack/{stack}/tile/{tileId}/png-image")
+    @Path("v1/owner/{owner}/project/{project}/stack/{stack}/tile/{tileId}/png-image")
     @GET
     @Produces(RenderServiceUtil.IMAGE_PNG_MIME_TYPE)
     @ApiOperation(value = "Render PNG image for a tile")
@@ -105,7 +111,9 @@ public class TileImageService {
                                           @QueryParam("filter") final Boolean filter,
                                           @QueryParam("excludeMask") final Boolean excludeMask,
                                           @QueryParam("normalizeForMatching") final Boolean normalizeForMatching,
-                                          @QueryParam("removeAllOption") final Boolean removeAllOption,
+                                          @QueryParam("excludeTransformsAfterLast") final Set<String> excludeAfterLastLabels,
+                                          @QueryParam("excludeFirstTransformAndAllAfter") final Set<String> excludeFirstAndAllAfterLabels,
+                                          @QueryParam("excludeAllTransforms") final Boolean excludeAllTransforms,
                                           @QueryParam("minIntensity") final Double minIntensity,
                                           @QueryParam("maxIntensity") final Double maxIntensity,
                                           @QueryParam("channels") final String channels,
@@ -119,15 +127,18 @@ public class TileImageService {
             final RenderParameters renderParameters =
                     tileDataService.getRenderParameters(owner, project, stack, tileId,
                                                         width, height, scale,
-                                                        filter, false, excludeMask, normalizeForMatching,
-                                                        minIntensity, maxIntensity,removeAllOption,channels);
+                                                        filter, false, excludeMask,
+                                                        normalizeForMatching,
+                                                        excludeAfterLastLabels, excludeFirstAndAllAfterLabels,
+                                                        excludeAllTransforms,
+                                                        minIntensity, maxIntensity, channels);
             return RenderServiceUtil.renderPngImage(renderParameters, null, responseHelper);
         } else {
             return responseHelper.getNotModifiedResponse();
         }
     }
 
-    @Path("project/{project}/stack/{stack}/tile/{tileId}/tiff-image")
+    @Path("v1/owner/{owner}/project/{project}/stack/{stack}/tile/{tileId}/tiff-image")
     @GET
     @Produces(RenderServiceUtil.IMAGE_TIFF_MIME_TYPE)
     @ApiOperation(value = "Render TIFF image for a tile")
@@ -144,7 +155,9 @@ public class TileImageService {
                                            @QueryParam("filter") final Boolean filter,
                                            @QueryParam("excludeMask") final Boolean excludeMask,
                                            @QueryParam("normalizeForMatching") final Boolean normalizeForMatching,
-                                           @QueryParam("removeAllOption") final Boolean removeAllOption,
+                                           @QueryParam("excludeTransformsAfterLast") final Set<String> excludeAfterLastLabels,
+                                           @QueryParam("excludeFirstTransformAndAllAfter") final Set<String> excludeFirstAndAllAfterLabels,
+                                           @QueryParam("excludeAllTransforms") final Boolean excludeAllTransforms,
                                            @QueryParam("minIntensity") final Double minIntensity,
                                            @QueryParam("maxIntensity") final Double maxIntensity,
                                            @QueryParam("channels") final String channels,
@@ -158,15 +171,18 @@ public class TileImageService {
             final RenderParameters renderParameters =
                     tileDataService.getRenderParameters(owner, project, stack, tileId,
                                                         width, height, scale,
-                                                        filter, false, excludeMask, normalizeForMatching,
-                                                        minIntensity, maxIntensity,removeAllOption,channels);
+                                                        filter, false, excludeMask,
+                                                        normalizeForMatching,
+                                                        excludeAfterLastLabels, excludeFirstAndAllAfterLabels,
+                                                        excludeAllTransforms,
+                                                        minIntensity, maxIntensity, channels);
             return RenderServiceUtil.renderTiffImage(renderParameters, null, responseHelper);
         } else {
             return responseHelper.getNotModifiedResponse();
         }
     }
 
-    @Path("project/{project}/stack/{stack}/tile/{tileId}/source/jpeg-image")
+    @Path("v1/owner/{owner}/project/{project}/stack/{stack}/tile/{tileId}/source/jpeg-image")
     @GET
     @Produces(RenderServiceUtil.IMAGE_JPEG_MIME_TYPE)
     @ApiOperation(value = "Render tile's source image without transformations in JPEG format")
@@ -194,7 +210,7 @@ public class TileImageService {
         }
     }
 
-    @Path("project/{project}/stack/{stack}/tile/{tileId}/source/png-image")
+    @Path("v1/owner/{owner}/project/{project}/stack/{stack}/tile/{tileId}/source/png-image")
     @GET
     @Produces(RenderServiceUtil.IMAGE_PNG_MIME_TYPE)
     @ApiOperation(value = "Render tile's source image without transformations in PNG format")
@@ -222,7 +238,7 @@ public class TileImageService {
         }
     }
 
-    @Path("project/{project}/stack/{stack}/tile/{tileId}/source/tiff-image")
+    @Path("v1/owner/{owner}/project/{project}/stack/{stack}/tile/{tileId}/source/tiff-image")
     @GET
     @Produces(RenderServiceUtil.IMAGE_TIFF_MIME_TYPE)
     @ApiOperation(value = "Render tile's source image without transformations in TIFF format")
@@ -250,7 +266,7 @@ public class TileImageService {
         }
     }
 
-    @Path("project/{project}/stack/{stack}/tile/{tileId}/mask/jpeg-image")
+    @Path("v1/owner/{owner}/project/{project}/stack/{stack}/tile/{tileId}/mask/jpeg-image")
     @GET
     @Produces(RenderServiceUtil.IMAGE_JPEG_MIME_TYPE)
     @ApiOperation(value = "Render tile's mask image without transformations in JPEG format")
@@ -278,7 +294,7 @@ public class TileImageService {
         }
     }
 
-    @Path("project/{project}/stack/{stack}/tile/{tileId}/mask/png-image")
+    @Path("v1/owner/{owner}/project/{project}/stack/{stack}/tile/{tileId}/mask/png-image")
     @GET
     @Produces(RenderServiceUtil.IMAGE_PNG_MIME_TYPE)
     @ApiOperation(value = "Render tile's mask image without transformations in PNG format")
@@ -306,7 +322,7 @@ public class TileImageService {
         }
     }
 
-    @Path("project/{project}/stack/{stack}/tile/{tileId}/mask/tiff-image")
+    @Path("v1/owner/{owner}/project/{project}/stack/{stack}/tile/{tileId}/mask/tiff-image")
     @GET
     @Produces(RenderServiceUtil.IMAGE_TIFF_MIME_TYPE)
     @ApiOperation(value = "Render tile's mask image without transformations in TIFF format")
@@ -334,7 +350,7 @@ public class TileImageService {
         }
     }
 
-    @Path("project/{project}/stack/{stack}/tile/{tileId}/withNeighbors/jpeg-image")
+    @Path("v1/owner/{owner}/project/{project}/stack/{stack}/tile/{tileId}/withNeighbors/jpeg-image")
     @GET
     @Produces(RenderServiceUtil.IMAGE_JPEG_MIME_TYPE)
     @ApiOperation(value = "Render tile with its neighbors in JPEG format")
