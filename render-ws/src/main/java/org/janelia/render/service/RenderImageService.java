@@ -367,23 +367,23 @@ public class RenderImageService {
     @Produces(RenderServiceUtil.IMAGE_TIFF_MIME_TYPE)
     @ApiOperation(
             tags = "Bounding Box Image APIs",
-            value = "Render TIFF image for the specified bounding box")
+            value = "Render 16-bit TIFF image for the specified bounding box")
     public Response renderTiff16ImageForBox(@PathParam("owner") final String owner,
-                                          @PathParam("project") final String project,
-                                          @PathParam("stack") final String stack,
-                                          @PathParam("x") final Double x,
-                                          @PathParam("y") final Double y,
-                                          @PathParam("z") final Double z,
-                                          @PathParam("width") final Integer width,
-                                          @PathParam("height") final Integer height,
-                                          @PathParam("scale") final Double scale,
-                                          @QueryParam("filter") final Boolean filter,
-                                          @QueryParam("binaryMask") final Boolean binaryMask,
-                                          @QueryParam("maxTileSpecsToRender") final Integer maxTileSpecsToRender,
-                                          @QueryParam("minIntensity") final Double minIntensity,
-                                          @QueryParam("maxIntensity") final Double maxIntensity,
-                                          @QueryParam("channels") final String channels,
-                                          @Context final Request request) {
+                                            @PathParam("project") final String project,
+                                            @PathParam("stack") final String stack,
+                                            @PathParam("x") final Double x,
+                                            @PathParam("y") final Double y,
+                                            @PathParam("z") final Double z,
+                                            @PathParam("width") final Integer width,
+                                            @PathParam("height") final Integer height,
+                                            @PathParam("scale") final Double scale,
+                                            @QueryParam("filter") final Boolean filter,
+                                            @QueryParam("binaryMask") final Boolean binaryMask,
+                                            @QueryParam("maxTileSpecsToRender") final Integer maxTileSpecsToRender,
+                                            @QueryParam("minIntensity") final Double minIntensity,
+                                            @QueryParam("maxIntensity") final Double maxIntensity,
+                                            @QueryParam("channels") final String channels,
+                                            @Context final Request request) {
 
         LOG.info("renderTiffImageForBox: entry");
 
@@ -398,6 +398,44 @@ public class RenderImageService {
             return responseHelper.getNotModifiedResponse();
         }
     }
+
+    @Path("v1/owner/{owner}/project/{project}/stack/{stack}/z/{z}/box/{x},{y},{width},{height},{scale}/png16-image")
+    @GET
+    @Produces(RenderServiceUtil.IMAGE_PNG_MIME_TYPE)
+    @ApiOperation(
+            tags = "Bounding Box Image APIs",
+            value = "Render 16-bit PNG image for the specified bounding box")
+    public Response renderPng16ImageForBox(@PathParam("owner") final String owner,
+                                           @PathParam("project") final String project,
+                                           @PathParam("stack") final String stack,
+                                           @PathParam("x") final Double x,
+                                           @PathParam("y") final Double y,
+                                           @PathParam("z") final Double z,
+                                           @PathParam("width") final Integer width,
+                                           @PathParam("height") final Integer height,
+                                           @PathParam("scale") final Double scale,
+                                           @QueryParam("filter") final Boolean filter,
+                                           @QueryParam("binaryMask") final Boolean binaryMask,
+                                           @QueryParam("maxTileSpecsToRender") final Integer maxTileSpecsToRender,
+                                           @QueryParam("minIntensity") final Double minIntensity,
+                                           @QueryParam("maxIntensity") final Double maxIntensity,
+                                           @QueryParam("channels") final String channels,
+                                           @Context final Request request) {
+
+        LOG.info("renderPngImageForBox: entry");
+
+        final ResponseHelper responseHelper = new ResponseHelper(request, getStackMetaData(owner, project, stack));
+        if (responseHelper.isModified()) {
+            final RenderParameters renderParameters =
+                    getRenderParametersForGroupBox(owner, project, stack, null,
+                            x, y, z, width, height, scale, filter, binaryMask,
+                            minIntensity, maxIntensity, channels);
+            return RenderServiceUtil.renderPngImage(renderParameters, maxTileSpecsToRender, responseHelper, true);
+        } else {
+            return responseHelper.getNotModifiedResponse();
+        }
+    }
+
     @Path("v1/owner/{owner}/project/{project}/stack/{stack}/dvid/imagetile/raw/xy/{width}_{height}/{x}_{y}_{z}/tif")
     @GET
     @Produces(RenderServiceUtil.IMAGE_TIFF_MIME_TYPE)
