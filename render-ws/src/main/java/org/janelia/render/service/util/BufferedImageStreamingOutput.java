@@ -121,17 +121,18 @@ public class BufferedImageStreamingOutput implements StreamingOutput {
             final PngWriter pngWriter = new PngWriter(outputStream, imageInfo);
             pngWriter.setCompLevel(compressionLevel);
             pngWriter.setFilterType(filterType);
-            ImageLineInt line = new ImageLineInt(imageInfo);
 
             final DataBufferUShort dataBuffer = (DataBufferUShort) bufferedImage.getRaster().getDataBuffer();
             if (dataBuffer.getNumBanks() != 1) {
                 throw new IOException("invalid number of banks (" + dataBuffer.getNumBanks() + "), must be 1");
             }
 
+            final int [] scanline = new int[imageInfo.cols];
+            ImageLineInt line = new ImageLineInt(imageInfo, scanline);
+
             for (int row = 0; row < imageInfo.rows; row++) {
                 for (int col = 0; col < imageInfo.cols; col++) {
-                    // TODO: Can one directly write to line.scanline? (Look at pngj v2 docs).
-                    ImageLineHelper.setValD(line, col, ImageLineHelper.int2double(line, dataBuffer.getElem(row * imageInfo.cols + col)));
+                    scanline[col] = dataBuffer.getData()[row * imageInfo.cols + col];
                 }
                 pngWriter.writeRow(line, row);
             }
